@@ -326,7 +326,7 @@ function stats(a,b){ // fechas 'YYYY-MM-DD' inclusive
         e.sets.forEach(s=>{r.reps+=s[1];if(kgKnown(e.ex))r.vol+=prog(e.ex,s[0])*s[1]});
         const g=groupOf(e.ex);r.g[g]=(r.g[g]||0)+e.sets.length;
         const v=corp?Math.max(...e.sets.map(s=>s[1])):Math.max(...e.sets.map(s=>prog(e.ex,s[0])));
-        const x=r.ex[e.ex]||(r.ex[e.ex]={n:0,first:v,last:v,fd:d,ld:d,corp});x.n++;x.last=v;x.ld=d;
+        const x=r.ex[e.ex]||(r.ex[e.ex]={n:0,first:v,last:v,best:v,bd:d,fd:d,ld:d,corp});x.n++;x.last=v;x.ld=d;if(v>x.best){x.best=v;x.bd=d}
       }else{
         r.min+=e.min||0;r.kcal+=e.kcal||0;r.km+=e.km||0;
         const x=r.act[e.act]||(r.act[e.act]={n:0,min:0,km:0,kcal:0,fc:0,fn:0});x.n++;x.min+=e.min||0;x.km+=e.km||0;x.kcal+=e.kcal||0;if(e.fc){x.fc+=e.fc;x.fn++}
@@ -397,9 +397,9 @@ function vRes(){
     (pr.length?pr.slice(0,8).map(x=>`<button class="trow" data-goex="${esc(x.ex)}">${ibox(exIcon(x.ex),1)}<div class="grow"><div><b>${esc(x.ex)}</b></div><div class="mut">${parseD(x.d).toLocaleDateString('es-AR',{day:'numeric',month:'short'})}</div></div><div class="r"><b>${fmtN(x.cur)} ${unitOf(x.ex,x.corp)}</b><div class="mut">antes ${fmtN(x.prev)}</div></div></button>`).join(''):'<div class="mut">Todavía no superaste marcas en este período.</div>')+`</div>`;
   // progreso por ejercicio
   const ex=Object.entries(s.ex).sort((x,y)=>y[1].n-x[1].n||x[0].localeCompare(y[0],'es'));
-  h+=`<div class="card"><div class="sec"><span>Progreso por ejercicio</span><span>primera → última vez</span></div>`+
-    (ex.length?ex.map(([n,x])=>{const ch=x.n>1&&x.first?Math.round((x.last-x.first)/x.first*100):null;
-      return `<button class="trow" data-goex="${esc(n)}">${ibox(exIcon(n),1)}<div class="grow"><div><b>${esc(n)}</b></div><div class="mut">${x.n} ${x.n===1?'vez':'veces'}</div></div><div class="r">${fmtN(x.first)} → <b>${fmtN(x.last)}</b> <span class="mut">${unitOf(n,x.corp)}</span><div class="mut" ${ch>0?'style="color:var(--acc)"':''}>${ch==null?'una sola vez':ch>0?'▲ '+ch+'%':ch<0?'▼ '+(-ch)+'%':'= igual'}</div></div></button>`}).join(''):'<div class="mut">Sin ejercicios de fuerza en el período.</div>')+`</div>`;
+  h+=`<div class="card"><div class="sec"><span>Progreso por ejercicio</span><span>mejor del período</span></div>`+
+    (ex.length?ex.map(([n,x])=>{const ch=x.n>1&&x.first?Math.round((x.best-x.first)/x.first*100):null,dd=d=>parseD(d).toLocaleDateString('es-AR',{day:'numeric',month:'numeric'});
+      return `<button class="trow" data-goex="${esc(n)}">${ibox(exIcon(n),1)}<div class="grow"><div><b>${esc(n)}</b></div><div class="mut">${x.n} ${x.n===1?'vez':'veces'}</div>${x.n>1?`<div class="mut">primera ${fmtN(x.first)} · última ${fmtN(x.last)}</div>`:''}</div><div class="r"><b>${fmtN(x.best)}</b> <span class="mut">${unitOf(n,x.corp)}</span><div class="mut" ${ch>0?'style="color:var(--acc)"':''}>${ch==null?'una sola vez':(ch>0?'▲ '+ch+'%':'= igual')+' · '+dd(x.bd)}</div></div></button>`}).join(''):'<div class="mut">Sin ejercicios de fuerza en el período.</div>')+`</div>`;
   // cardio
   const ac=Object.entries(s.act).sort((x,y)=>y[1].n-x[1].n);
   h+=`<div class="card"><div class="sec"><span>Cardio y deportes</span><span>${s.min} min</span></div>`+
@@ -417,7 +417,7 @@ function buildPeriodReport(){
   if(gs.length)L.push('','*Series por grupo:* '+gs.map(([g,n])=>`${g} ${n}`).join(' · '));
   if(pr.length){L.push('','🏆 *Récords:*');pr.slice(0,8).forEach(x=>L.push(`• ${x.ex}: ${fmtN(x.cur)} ${unitOf(x.ex,x.corp)} (antes ${fmtN(x.prev)}) · ${f(x.d)}`))}
   const ex=Object.entries(s.ex).filter(([n,x])=>x.n>1).sort((x,y)=>y[1].n-x[1].n);
-  if(ex.length){L.push('','📈 *Progreso (primera → última vez):*');ex.forEach(([n,x])=>L.push(`• ${n}: ${fmtN(x.first)} → ${fmtN(x.last)} ${unitOf(n,x.corp)}`))}
+  if(ex.length){L.push('','📈 *Progreso del período:*');ex.forEach(([n,x])=>{const u=unitOf(n,x.corp);L.push(`• ${n}: mejor ${fmtN(x.best)} ${u} (${f(x.bd)}) · primera ${fmtN(x.first)} · última ${fmtN(x.last)}`)})}
   const ac=Object.entries(s.act);if(ac.length){L.push('','🏃 *Cardio y deportes:*');ac.forEach(([n,x])=>L.push(`• ${n}: ${x.n} ${x.n===1?'vez':'veces'} · ${x.min} min${x.km?' · '+fmtN(Math.round(x.km*10)/10)+' km':''}`))}
   return L.join('\n');
 }
